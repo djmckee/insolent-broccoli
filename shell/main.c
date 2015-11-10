@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+// Define some constants
+// The maximum command input length in chars (for buffer size)...
+#define INPUT_BUFFER_SIZE 1024
+
 // Declare function prototypes
 void prompt();
 void readcmd(char *cmd, char *params[]);
@@ -19,8 +23,13 @@ int main(int argc, const char * argv[]) {
         // Prompt the user for some input...
         prompt();
         
+        // Create a command string placeholder pointer... (only needs to exist within the scope of this while loop)
+        char *commandString = malloc(INPUT_BUFFER_SIZE);
+        
         // Read the user's input...
-        readcmd(NULL, NULL);
+        readcmd(commandString, NULL);
+        
+        printf(commandString);
         
         int status = 0;
         
@@ -52,10 +61,10 @@ void readcmd(char *cmd, char *params[]) {
     // I looked up the use of the getline() function at http://c-for-dummies.com/blog/?p=1112
     
     // Give the buffer a reasonable size...
-    size_t bufferSize = 1024;
+    size_t bufferSize = INPUT_BUFFER_SIZE;
     
     // And allocate the buffer dynamically...
-    char *buffer = (char*) malloc(bufferSize * sizeof(char));
+    char *buffer = malloc(bufferSize * sizeof(char));
     
     // Passing stdin as getline()'s FILE reference
     // Read a line from stdin into the buffer we've allocated...
@@ -70,6 +79,13 @@ void readcmd(char *cmd, char *params[]) {
         exit(1);
     }
     
+    // Copy the buffer string we read into the cmd pointer we've been passed (do not assign directly because buffer's a local pointer)
+    strcpy(cmd, buffer);
+    
+    
+    
+    // TODO: Parameter handling!
+    /*
     // Split the line by string...
     // (I looked up the strtok function at http://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm )
     char *inputCommand = NULL;
@@ -77,16 +93,17 @@ void readcmd(char *cmd, char *params[]) {
     const char seperator[2] = " ";
     char *inputToken = strtok(inputCommand, seperator);
     
-    
+    // Create an initial input params array,
+    char *inputParameters[] = { NULL };
     
     while (inputToken != NULL) {
         if (inputCommand == NULL) {
             strcpy(inputCommand, inputToken);
+            
+        } else {
+            // It's a parameter, add it to the array and resize
         }
     }
-    
-    
-    
-    
+    */
     
 }
