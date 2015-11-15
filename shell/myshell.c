@@ -38,11 +38,11 @@ int main(int argc, const char * argv[]) {
             continue;
         }
         
-        printf(commandString);
-        
         // Now that we're certain they entered a command, remove the trailing \n from the command string (if one exists)...
         commandString = strtok(commandString, "\n");
         
+        printf(commandString);
+
         // TODO: Remove possible trailing \n from the last argument too!
         
         // If the user enters 'q' at the prompt, exit the shell normally
@@ -52,11 +52,12 @@ int main(int argc, const char * argv[]) {
             exit(0);
         }
         
+        // Initialise a placeholder variable to read the process status number into
         int status = 0;
         
         // Fork a process, or wait for the currently excecuting one to complete...
         if (fork() != 0) {
-            // This is the parent process, wait for the child process to complete...
+            // This is the parent process, wait for the child process to complete, read status into status placeholder var...
             waitpid(-1, &status, 0);
         } else {
             // This is the child process, execute the user's command with any parameters they've passed in...
@@ -92,6 +93,7 @@ void prompt() {
     
 }
 
+
 // A function to read an input from the console, split it into command and parameters, and read these values into the pointers passed into it...
 void readcmd(char *cmd, char *params[]) {
     // Get the user input...
@@ -116,12 +118,47 @@ void readcmd(char *cmd, char *params[]) {
         exit(1);
     }
     
-    // Copy the buffer string we read into the cmd pointer we've been passed (do not assign directly because buffer's a local pointer)
-    strcpy(cmd, buffer);
+    // Split the line by string...
+    // (I looked up the strtok function at http://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm )
+    char *inputCommand = malloc(bufferSize * sizeof(char));
     
-    // buffer is a local dynamically allocated pointer - free it from the heap now that we're done with it
+    // We want to separate the string based on spaces...
+    const char *seperator = " ";
+    
+    // Start the tokenizer by passing in the buffer string and the space seperator...
+    char *inputToken = strtok(buffer, seperator);
+    
+    // The input command will be the first token but has not yet been set - this boolean acts as a flag, so we know when it has been set and do not overwrite it
+    bool inputCommandSet = false;
+    
+    // While there's still tokens to be read in, read them!
+    while (inputToken != NULL) {
+        if (inputCommandSet == false) {
+            // Copy the token into the input command
+            strcpy(inputCommand, inputToken);
+            
+            // and set the flag
+            inputCommandSet = true;
+            
+        } else {
+            // it's a parameter, add it to the parameters array and resize
+            printf("param:%s", inputToken);
+        }
+        
+        // And read the next token...
+        inputToken = strtok(NULL, seperator);
+        
+    }
+    
+    
+    // Copy the value of the input command string we read into the cmd pointer we've been passed (do not assign directly because inputCommand's a local pointer)
+    strcpy(cmd, inputCommand);
+    
+    // Free local dynamically allocated pointers from the heap!
     free(buffer);
-    
-
+    free(inputToken);
+    free(inputCommand);
     
 }
+
+
