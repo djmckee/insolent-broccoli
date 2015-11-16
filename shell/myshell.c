@@ -11,6 +11,9 @@
 // The maximum command input length in chars (for buffer size)...
 #define INPUT_BUFFER_SIZE 1024
 
+// The maximum parameter input lenght in chars
+#define PARAMETER_INPUT_LENGTH_MAX 255
+
 // Declare function prototypes
 void prompt();
 void readcmd(char *cmd, char *params[]);
@@ -28,8 +31,11 @@ int main(int argc, const char * argv[]) {
         // Create a command string placeholder pointer... (only needs to exist within the scope of this while loop)
         char *commandString = malloc(INPUT_BUFFER_SIZE);
         
+        // Create a parameters array placeholder pointer - this will be dynamically resized via realloc in the readcmd() function, but just needs to be initialised to the size of a NULL (so the NULL terminator can fit in, if there's no parameters, without any resizing going on)...
+        char **parametersArray = malloc(sizeof(NULL));
+        
         // Read the user's input...
-        readcmd(commandString, NULL);
+        readcmd(commandString, parametersArray);
         
         // Check if the user entered anything at the prompt or just hit return?
         // See if the first char in the string is a newline - if so - they just hit return.
@@ -42,12 +48,22 @@ int main(int argc, const char * argv[]) {
         commandString = strtok(commandString, "\n");
         
         printf(commandString);
+        
+        int index = 0;
+        bool firstRun = true;
+        char *currentString;
+        while (firstRun || currentString != NULL) {
+            firstRun = false;
+            index++;
+            printf("\narray param %d = %s\n", index, parametersArray[index]);
+            
+        }
 
         // TODO: Remove possible trailing \n from the last argument too!
         
         // If the user enters 'q' at the prompt, exit the shell normally
         if (strcmp(commandString, quitString) == 0) {
-            // The user entered 'q' - quit normally!
+            // The user entered 'q' - quit normally & inform user!
             printf("\nYou entered 'q' - exiting the shell.\n");
             exit(0);
         }
@@ -61,11 +77,12 @@ int main(int argc, const char * argv[]) {
             waitpid(-1, &status, 0);
         } else {
             // This is the child process, execute the user's command with any parameters they've passed in...
-            execve(commandString, NULL, NULL);
+            execve(commandString, parametersArray, NULL);
         }
         
         // Free the command string pointer; we've finished with it and need to clear it from the heap
         free(commandString);
+    
         
     }
     
@@ -131,6 +148,8 @@ void readcmd(char *cmd, char *params[]) {
     // The input command will be the first token but has not yet been set - this boolean acts as a flag, so we know when it has been set and do not overwrite it
     bool inputCommandSet = false;
     
+    int arraySizeCount = 0;
+    
     // While there's still tokens to be read in, read them!
     while (inputToken != NULL) {
         if (inputCommandSet == false) {
@@ -142,13 +161,32 @@ void readcmd(char *cmd, char *params[]) {
             
         } else {
             // it's a parameter, add it to the parameters array and resize
-            printf("param:%s", inputToken);
+            printf("\nparam:%s\n", inputToken);
+            
+            // Increment the size counter so the array is resized to the correct new size...
+            arraySizeCount++;
+            
+            // Calculate new size - it must hold the new desired array size number of strings, plus a NULL terminator...
+            size_t newArraySize = (arraySizeCount * (PARAMETER_INPUT_LENGTH_MAX * sizeof(char))) + sizeof(NULL);
+            printf("\nnew array size = %zu\n", newArraySize);
+
+            // Realloc the array to make it big enough
+            *params = realloc(params, newArraySize);
+            
+            // And insert at new index! (which will be the array size - 1)
+            // (inserting the string via strcpy so that a local pointer does not get inserted into an array that lives on beyond this method's scope!)
+            size_t newIndex = (arraySizeCount - 1);
+            strcpy(params[newIndex], inputToken);
+            
         }
         
         // And read the next token...
         inputToken = strtok(NULL, seperator);
         
     }
+    
+    // Terminate the parameters array with a NULL
+    params[arraySizeCount] = NULL;
     
     
     // Copy the value of the input command string we read into the cmd pointer we've been passed (do not assign directly because inputCommand's a local pointer)
