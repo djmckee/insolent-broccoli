@@ -54,8 +54,9 @@ int main(int argc, const char * argv[]) {
         char *currentString;
         while (firstRun || currentString != NULL) {
             firstRun = false;
-            index++;
             printf("\narray param %d = %s\n", index, parametersArray[index]);
+            index++;
+
             
         }
 
@@ -167,11 +168,11 @@ void readcmd(char *cmd, char *params[]) {
             arraySizeCount++;
             
             // Calculate new size - it must hold the new desired array size number of strings, plus a NULL terminator...
-            size_t newArraySize = (arraySizeCount * (PARAMETER_INPUT_LENGTH_MAX * sizeof(char))) + sizeof(NULL);
+            size_t newArraySize = ((arraySizeCount + 1) * (PARAMETER_INPUT_LENGTH_MAX * sizeof(char*))) + sizeof(NULL);
             printf("\nnew array size = %zu\n", newArraySize);
 
             // Realloc the array to make it big enough
-            *params = realloc(params, newArraySize);
+            *params = realloc(*params, newArraySize);
             
             // And insert at new index! (which will be the array size - 1)
             // (inserting the string via strcpy so that a local pointer does not get inserted into an array that lives on beyond this method's scope!)
