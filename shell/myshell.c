@@ -14,13 +14,18 @@
 // The maximum parameter input lenght in chars
 #define PARAMETER_INPUT_LENGTH_MAX 255
 
+// Declare the string that quits the shell as a constant
+const char *QUIT_STRING = "q";
+
+// Declare the newline char. as a constant to improve code readability and make it easy to change for example if this code is used on a non-standard system with a different newline char to \n
+const char *NEW_LINE_CHAR = "\n";
+
 // Declare function prototypes
 void prompt();
-void readcmd(char *cmd, char *params[]);
+void readCmd(char *cmd, char **params[]);
+void detectQuitCmd(char *cmd);
 
-// Declare the string that quits the shell as a constant
-const char *quitString = "q";
-
+// I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
 int main(int argc, const char * argv[]) {
     
     // Repeat forever
@@ -35,39 +40,23 @@ int main(int argc, const char * argv[]) {
         char **parametersArray = malloc(sizeof(NULL));
         
         // Read the user's input...
-        readcmd(commandString, parametersArray);
+        readCmd(commandString, parametersArray);
         
         // Check if the user entered anything at the prompt or just hit return?
         // See if the first char in the string is a newline - if so - they just hit return.
-        if (strcmp(commandString, "\n") == 0) {
+        if (strcmp(commandString, NEW_LINE_CHAR) == 0) {
             // The user just hit return; loop around, don't try to execve a newline char...
             continue;
         }
         
         // Now that we're certain they entered a command, remove the trailing \n from the command string (if one exists)...
-        commandString = strtok(commandString, "\n");
+        commandString = strtok(commandString, NEW_LINE_CHAR);
         
-        printf(commandString);
+        // Newline so we print output out on another line
+        printf("\n");
         
-        int index = 0;
-        bool firstRun = true;
-        char *currentString;
-        while (firstRun || currentString != NULL) {
-            firstRun = false;
-            printf("\narray param %d = %s\n", index, parametersArray[index]);
-            index++;
-
-            
-        }
-
-        // TODO: Remove possible trailing \n from the last argument too!
-        
-        // If the user enters 'q' at the prompt, exit the shell normally
-        if (strcmp(commandString, quitString) == 0) {
-            // The user entered 'q' - quit normally & inform user!
-            printf("\nYou entered 'q' - exiting the shell.\n");
-            exit(0);
-        }
+        // Check to see if the command is equal to the quite command (and handle it appropriately if so)
+        detectQuitCmd(commandString);
         
         // Initialise a placeholder variable to read the process status number into
         int status = 0;
@@ -76,6 +65,12 @@ int main(int argc, const char * argv[]) {
         if (fork() != 0) {
             // This is the parent process, wait for the child process to complete, read status into status placeholder var...
             waitpid(-1, &status, 0);
+            
+            // TODO: Check status, provide error info
+            if (status != 0) {
+                // An error occured...
+                
+            }
         } else {
             // This is the child process, execute the user's command with any parameters they've passed in...
             execve(commandString, parametersArray, NULL);
@@ -113,7 +108,7 @@ void prompt() {
 
 
 // A function to read an input from the console, split it into command and parameters, and read these values into the pointers passed into it...
-void readcmd(char *cmd, char *params[]) {
+void readCmd(char *cmd, char **params[]) {
     // Get the user input...
     // I looked up the use of the getline() function at http://c-for-dummies.com/blog/?p=1112
     
@@ -129,8 +124,8 @@ void readcmd(char *cmd, char *params[]) {
     
     // a -1 return code from getline indicates an error, check if an error occured...
     if (line == -1) {
-        // error!
-        printf("An error occured. Please restart the shell and try again");
+        // error! Print a human readable representation to the shell
+        perror("shell error");
         
         // and exit abruptly...
         exit(1);
@@ -162,27 +157,46 @@ void readcmd(char *cmd, char *params[]) {
             
         } else {
             // it's a parameter, add it to the parameters array and resize
-            printf("\nparam:%s\n", inputToken);
-            
             // Increment the size counter so the array is resized to the correct new size...
             arraySizeCount++;
             
+            // Create a sizeof(char*) placeholder to replace so many calls to sizeof/make code easier to modify in the future if the array ever needed to hold different types...
+            size_t stringSize = PARAMETER_INPUT_LENGTH_MAX * sizeof(char*);
+            
+            // Create a copy of the input token to mutate...
+            char *mutableParameter = malloc(stringSize);
+            strcpy(mutableParameter, inputToken);
+            
             // Calculate new size - it must hold the new desired array size number of strings, plus a NULL terminator...
-            size_t newArraySize = ((arraySizeCount + 1) * (PARAMETER_INPUT_LENGTH_MAX * sizeof(char*))) + sizeof(NULL);
-            printf("\nnew array size = %zu\n", newArraySize);
-
+            size_t newArraySize = (arraySizeCount * stringSize) + sizeof(NULL);
+            
             // Realloc the array to make it big enough
-            *params = realloc(*params, newArraySize);
+            params = realloc(params, newArraySize);
             
             // And insert at new index! (which will be the array size - 1)
             // (inserting the string via strcpy so that a local pointer does not get inserted into an array that lives on beyond this method's scope!)
             size_t newIndex = (arraySizeCount - 1);
-            strcpy(params[newIndex], inputToken);
+            
+            params[newIndex] = &mutableParameter;
+            
             
         }
         
         // And read the next token...
         inputToken = strtok(NULL, seperator);
+        
+    }
+
+    // TODO: Remove \n chars from parameters
+    for (int i = 0; i < arraySizeCount; i++) {
+        // Get the desired string to cleanup from the array
+        char *string = *params[i];
+        
+        // Remove the \n chars present
+        string = strtok(string, NEW_LINE_CHAR);
+        
+        //params[i] = &string;
+        strcpy(*params[i], &string);
         
     }
     
@@ -200,4 +214,16 @@ void readcmd(char *cmd, char *params[]) {
     
 }
 
+// This function detects if the string parameter passed to it is equal to the defined constant quit command, and if it is, then it quits the shell with a normal (0) exit status, and prints to the console to let the user know...
+void detectQuitCmd(char *cmd) {
+    // If the user enters 'q' at the prompt, exit the shell normally
+    if (strcmp(cmd, QUIT_STRING) == 0) {
+        // The user entered the quit char - quit normally & inform user!
+        printf("\nYou entered '%s' - exiting the shell.\n", QUIT_STRING);
+        
+        // And quit with exit code 0 (a normal quit)
+        exit(0);
+    }
+    
+}
 

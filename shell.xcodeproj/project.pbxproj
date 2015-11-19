@@ -207,6 +207,7 @@
 		BA3B67E31BEFB53800BAF906 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -214,6 +215,7 @@
 		BA3B67E41BEFB53800BAF906 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
