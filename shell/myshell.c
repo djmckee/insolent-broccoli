@@ -26,7 +26,7 @@ void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
 
 // I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
-int main(int argc, const char * argv[]) {
+int main(int argc, const char * argv[] ) {
     
     // Repeat forever
     while (true) {
@@ -195,8 +195,8 @@ void readCmd(char *cmd, char **params[]) {
         // Remove the \n chars present
         string = strtok(string, NEW_LINE_CHAR);
         
-        //params[i] = &string;
-        strcpy(*params[i], &string);
+        params[i] = &string;
+        //strcpy(*params[i], &string);
         
     }
     
