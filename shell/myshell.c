@@ -34,7 +34,7 @@ void detectQuitCmd(char *cmd);
 bool executeBuiltIn(char *cmd, char **params[]);
 void printCurrentDirToConsole();
 
-// Declare built-in functions
+// Declare built-in function prototypes
 void builtinCd(char **params[]);
 void builtinPwd();
 
@@ -155,7 +155,6 @@ int main(int argc, const char *argv[] ) {
                             // Insert the new path at the new index...
                             paths[newIndex] = token;
                             
-                            
                             // And read the next token in...
                             token = strtok(NULL, seperator);
                             
@@ -180,6 +179,9 @@ int main(int argc, const char *argv[] ) {
                             // Try executing the new comamnd path, with existing params & environment...
                             execStatus = execve(newExecPath, parametersArray, envp);
                             
+                            // Free the dynamically allocated path; we're done with it
+                            free(newExecPath);
+                            
                             // If it went without error, break out of this loop - we only ever want to execute one run of the command!
                             if (execStatus == 0) {
                                 // It worked!
@@ -197,6 +199,9 @@ int main(int argc, const char *argv[] ) {
 
                             
                         }
+                        
+                        // Free the paths array
+                        free(paths);
                         
                     }
 
@@ -411,5 +416,8 @@ void printCurrentDirToConsole() {
     
     // Print the current working directory's path to the console
     printf("%s", cwdBuffer);
+    
+    // Free the dynamically allocated buffer
+    free(cwdBuffer);
     
 }
