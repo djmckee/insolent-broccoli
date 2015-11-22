@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 // Define some constants
 // The maximum command input length in chars (for buffer size)...
@@ -61,7 +62,7 @@ int main(int argc, const char *argv[] ) {
         // If the user asked for help, print the help text to the console, then continue on the while loop...
         if (strcmp(commandString, HELP_COMMAND) == 0) {
             // Print some pre-defined help
-            printf(HELP_STRING);
+            printf("%s", HELP_STRING);
             
             // Loop around...
             continue;
@@ -89,11 +90,117 @@ int main(int argc, const char *argv[] ) {
             }
         } else {
             // This is the child process, execute the user's command with any parameters they've passed in...
-            int execStatus = execve(commandString, parametersArray, NULL);
+
+            // Create an array containing NULL to pass as envp (as per the example I looked up at http://geoffgarside.co.uk/2009/08/28/using-execve-for-the-first-time/ )
+            char *envp[] = { NULL };
             
+            // Execute the command!
+            int execStatus = execve(commandString, parametersArray, envp);
+            
+            // Did execve fail because of no such file found - if so, try executing the program from the list of places in the PATH environment variable instead...
+            if (execStatus == -1) {
+                // Was the problem 'No such file or directory' - if so, look in the directories listed in the PATH var for the command instead, try and execute it from there...
+                if (errno == ENOENT) {
+                    // I looked up getenv() at http://www0.cs.ucl.ac.uk/staff/ucacbbl/getenv/
+                    const char *pathVar = getenv("PATH");
+                    
+                    // Check we have some PATH vars and put them to good use...
+                    if (pathVar == NULL) {
+                        // No executable containing dirs. in the PATH - warn the user!
+                        printf("\nNo PATH environment var - you may wish to list places containing executables in there then try again.\n");
+                        
+                    } else {
+                        // We have a PATH var - a string full of directories to try. Split up the PATH into various directories to try...
+                        // Split the PATH by colon string
+                        // (I looked up the strtok function at http://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm )
+                        // A placeholder array to place the executable paths in...
+                        // Create a sizeof(char*) placeholder to replace so many calls to sizeof/make code easier to modify in the future if the array ever needed to hold different types...
+                        size_t stringSize = PARAMETER_INPUT_LENGTH_MAX * sizeof(char*);
+                        char **paths = malloc(stringSize);
+                        
+                        // We want to separate the string based on colons...
+                        const char *seperator = ":";
+                        
+                        // Start the tokenizer by passing in the buffer string and the space seperator...
+                        char *token = strtok(pathVar, seperator);
+                        
+                        int arraySizeCount = 0;
+                        
+                        // While there's still tokens to be read in, read them!
+                        while (token != NULL) {
+                            // it's another path, add it to the paths array and resize
+                            // Increment the size counter so the array is resized to the correct new size...
+                            arraySizeCount++;
+                            
+                            // Calculate new size - it must hold the new desired array size number of strings...
+                            size_t newArraySize = (arraySizeCount * stringSize);
+                            
+                            // Realloc the array to make it big enough
+                            paths = realloc(paths, newArraySize);
+                            
+                            // And insert at new index! (which will be the array size - 1)
+                            size_t newIndex = (arraySizeCount - 1);
+                            
+                            // Insert the new path at the new index...
+                            paths[newIndex] = token;
+                            
+                            
+                            // And read the next token in...
+                            token = strtok(NULL, seperator);
+                            
+                        }
+                        
+                        // Now iterate through the paths array, trying each one and appending the command entered onto the end, until one works...
+                        for (int i = 0; i < arraySizeCount; i++) {
+                            const char *path = paths[i];
+                            // Create the new path by concatenating the command the user input on to the end of the path
+                            char *newExecPath = malloc(stringSize);
+                            
+                            // Copy the path into the newExecPath so we can append to it
+                            strcpy(newExecPath, path);
+                            
+                            // Concat a trailing / onto the end...
+                            // (I looked up strcat at http://www.tutorialspoint.com/c_standard_library/c_function_strcat.htm )
+                            strcat(newExecPath, "/");
+                            
+                            // Now, concat the command on to the end of the new path
+                            strcat(newExecPath, commandString);
+                            
+                            // Try executing the new comamnd path, with existing params & environment...
+                            execStatus = execve(newExecPath, parametersArray, envp);
+                            
+                            // If it went without error, break out of this loop - we only ever want to execute one run of the command!
+                            if (execStatus == 0) {
+                                // It worked!
+                                break;
+                            } else {
+                                // If it still wasn't found, continue on in this for loop trying the next path - but, if the error was something else, break out and let our default error handling code in the outer loop handle it!
+                                 if (errno == ENOENT) {
+                                     // Continue, trying the next path in the PATH array
+                                     continue;
+                                 } else {
+                                     // Something else went wrong; handle it!
+                                     break;
+                                 }
+                            }
+
+                            
+                        }
+                        
+                    }
+
+                }
+                
+            }
+            
+            // Back to default error handling for all scenarios now.
             // In error scenarios, execve returns -1...
             if (execStatus == -1) {
                 // An error occured...
+                //Print a human readable representation to the shell
+                perror("error");
+                
+                
             }
             
         }
@@ -120,7 +227,7 @@ void prompt() {
     getcwd(cwdBuffer, cwdBufferSize);
     
     // Print the current working directory's path to the console
-    printf(cwdBuffer);
+    printf("%s", cwdBuffer);
     
     // And print a colon then a space so the user can easily see where they're entering their command...
     printf(": ");
@@ -152,7 +259,7 @@ void readCmd(char *cmd, char **params[]) {
         exit(1);
     }
     
-    // Split the line by string...
+    // Split the command input line by space string...
     // (I looked up the strtok function at http://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm )
     char *inputCommand = malloc(bufferSize * sizeof(char));
     
@@ -195,7 +302,6 @@ void readCmd(char *cmd, char **params[]) {
             params = realloc(params, newArraySize);
             
             // And insert at new index! (which will be the array size - 1)
-            // (inserting the string via strcpy so that a local pointer does not get inserted into an array that lives on beyond this method's scope!)
             size_t newIndex = (arraySizeCount - 1);
             
             params[newIndex] = &mutableParameter;
@@ -208,7 +314,7 @@ void readCmd(char *cmd, char **params[]) {
         
     }
 
-    // TODO: Remove \n chars from parameters
+    // Remove \n chars from parameters
     for (int i = 0; i < arraySizeCount; i++) {
         // Get the desired string to cleanup from the array
         char *string = *params[i];
@@ -217,7 +323,6 @@ void readCmd(char *cmd, char **params[]) {
         string = strtok(string, NEW_LINE_CHAR);
         
         params[i] = &string;
-        //strcpy(*params[i], &string);
         
     }
     
