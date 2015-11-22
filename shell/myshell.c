@@ -24,9 +24,10 @@ const char *NEW_LINE_CHAR = "\n";
 void prompt();
 void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
+bool isNewLine(char *cmd);
 
 // I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
-int main(int argc, const char * argv[] ) {
+int main(int argc, const char *argv[] ) {
     
     // Repeat forever
     while (true) {
@@ -44,7 +45,7 @@ int main(int argc, const char * argv[] ) {
         
         // Check if the user entered anything at the prompt or just hit return?
         // See if the first char in the string is a newline - if so - they just hit return.
-        if (strcmp(commandString, NEW_LINE_CHAR) == 0) {
+        if (isNewLine(commandString)) {
             // The user just hit return; loop around, don't try to execve a newline char...
             continue;
         }
@@ -78,7 +79,6 @@ int main(int argc, const char * argv[] ) {
         
         // Free the command string pointer; we've finished with it and need to clear it from the heap
         free(commandString);
-    
         
     }
     
@@ -223,6 +223,18 @@ void detectQuitCmd(char *cmd) {
         
         // And quit with exit code 0 (a normal quit)
         exit(0);
+    }
+    
+}
+
+// This function checks to see if the cmd string it has been passed is just a new line. It returns true if it is, false if not
+bool isNewLine(char *cmd) {
+    // If the string comparison returns an offset of 0, then the cmd string is equal to the newline char.
+    // (I didn't want to just return a boolean expression from this function as that wouldn't strictly by an stdbool boolean).
+    if (strcmp(cmd, NEW_LINE_CHAR) == 0) {
+        return true;
+    } else {
+        return false;
     }
     
 }
