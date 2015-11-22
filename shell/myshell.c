@@ -15,27 +15,27 @@
 // The maximum parameter input lenght in chars
 #define PARAMETER_INPUT_LENGTH_MAX 255
 
-// Declare the string that quits the shell as a constant
+// Define the string that quits the shell as a constant
 const char *QUIT_STRING = "q";
 
-// Declare the newline char. as a constant to improve code readability and make it easy to change for example if this code is used on a non-standard system with a different newline char to \n
+// Define the newline char. as a constant to improve code readability and make it easy to change for example if this code is used on a non-standard system with a different newline char to \n
 const char *NEW_LINE_CHAR = "\n";
 
-// Declare a command to use for help...
+// Define a command to use for help...
 const char *HELP_COMMAND = "help";
 
-// Declare a constant 'help' string to print to the console when the user uses the help command
+// Define a constant 'help' string to print to the console when the user uses the help command
 const char *HELP_STRING = "\nHELP\nThis is a simple shell. To use, enter your command and any parameters (separated by spaces) and hit return.\nEnter 'q' and hit return to exit the shell.\n\n";
 
 // Declare function prototypes
 void prompt();
 void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
-bool executeBuiltIn(char *cmd, char **params[]);
+bool executeBuiltIn(char *cmd, char *params[]);
 void printCurrentDirToConsole();
 
 // Declare built-in function prototypes
-void builtinCd(char **params[]);
+void builtinCd(char *params[]);
 void builtinPwd();
 
 // I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
@@ -360,7 +360,7 @@ void detectQuitCmd(char *cmd) {
 }
 
 // A function to check if the command passed in is a built-in and if so execute it as a built-in and return true so the calling code knows it's been executed, otherwise, return false so the calling code knows that it has not yet been executed
-bool executeBuiltIn(char *cmd, char **params[]) {
+bool executeBuiltIn(char *cmd, char *params[]) {
     // Define builtins
     const char *cdCommand = "cd";
     const char *pwdCommand = "pwd";
@@ -368,7 +368,7 @@ bool executeBuiltIn(char *cmd, char **params[]) {
     // Check to see if cmd matches built in commands
     if (strcmp(cmd, cdCommand) == 0) {
         // Perform 'cd' built-in!
-        builtinCd(&params);
+        builtinCd(params);
         
         return true;
     }
@@ -386,9 +386,11 @@ bool executeBuiltIn(char *cmd, char **params[]) {
 }
 
 // A built-in 'cd' function, changes the current directory...
-void builtinCd(char **params[]) {
-    char *newDirectory = *params[0];
-    printf("new = %s", newDirectory);
+void builtinCd(char *params[]) {
+    // Get the new directory to switch to
+    char *newDirectory = params[0];
+
+    // Change to it via chdir
     // I looked up chdir at http://pubs.opengroup.org/onlinepubs/9699919799/functions/chdir.html
     chdir(newDirectory);
     
@@ -400,6 +402,7 @@ void builtinPwd() {
     
     // And print a new-line
     printf("\n");
+
     
 }
 
@@ -410,6 +413,7 @@ void printCurrentDirToConsole() {
     
     // Allocate a buffer of a reasnoble size to read the current working directory path string into
     char *cwdBuffer = malloc(cwdBufferSize * sizeof(char));
+    
     
     // Get the current working directory path into
     getcwd(cwdBuffer, cwdBufferSize);
