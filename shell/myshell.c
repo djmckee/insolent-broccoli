@@ -31,11 +31,11 @@ const char *HELP_STRING = "\nHELP\nThis is a simple shell. To use, enter your co
 void prompt();
 void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
-bool executeBuiltIn(char *cmd, char *params[]);
+bool executeBuiltIn(char *cmd, char **params[]);
 void printCurrentDirToConsole();
 
 // Declare built-in functions
-void builtinCd(char *params[]);
+void builtinCd(char **params[]);
 void builtinPwd();
 
 // I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
@@ -355,7 +355,7 @@ void detectQuitCmd(char *cmd) {
 }
 
 // A function to check if the command passed in is a built-in and if so execute it as a built-in and return true so the calling code knows it's been executed, otherwise, return false so the calling code knows that it has not yet been executed
-bool executeBuiltIn(char *cmd, char *params[]) {
+bool executeBuiltIn(char *cmd, char **params[]) {
     // Define builtins
     const char *cdCommand = "cd";
     const char *pwdCommand = "pwd";
@@ -363,7 +363,7 @@ bool executeBuiltIn(char *cmd, char *params[]) {
     // Check to see if cmd matches built in commands
     if (strcmp(cmd, cdCommand) == 0) {
         // Perform 'cd' built-in!
-        builtinCd(params);
+        builtinCd(&params);
         
         return true;
     }
@@ -381,7 +381,7 @@ bool executeBuiltIn(char *cmd, char *params[]) {
 }
 
 // A built-in 'cd' function, changes the current directory...
-void builtinCd(char *params[]) {
+void builtinCd(char **params[]) {
     char *newDirectory = *params[0];
     printf("new = %s", newDirectory);
     // I looked up chdir at http://pubs.opengroup.org/onlinepubs/9699919799/functions/chdir.html
