@@ -31,6 +31,12 @@ const char *HELP_STRING = "\nHELP\nThis is a simple shell. To use, enter your co
 void prompt();
 void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
+bool executeBuiltIn(char *cmd, char *params[]);
+void printCurrentDirToConsole();
+
+// Declare built-in functions
+void builtinCd(char *params[]);
+void builtinPwd();
 
 // I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
 int main(int argc, const char *argv[] ) {
@@ -65,6 +71,11 @@ int main(int argc, const char *argv[] ) {
             printf("%s", HELP_STRING);
             
             // Loop around...
+            continue;
+        }
+        
+        // If the command is built-in, execute it using the built-in function and continue on in the while loop...
+        if (executeBuiltIn(commandString, parametersArray)) {
             continue;
         }
         
@@ -216,18 +227,8 @@ int main(int argc, const char *argv[] ) {
 
 // A function to print the shell's command prompt to the console...
 void prompt() {
-    // Get the current working directory
-    // I looked up the getcwd() function at http://pubs.opengroup.org/onlinepubs/9699919799/functions/getcwd.html
-    size_t cwdBufferSize = INPUT_BUFFER_SIZE;
-
-    // Allocate a buffer of a reasnoble size to read the current working directory path string into
-    char *cwdBuffer = malloc(cwdBufferSize * sizeof(char));
-    
-    // Get the current working directory path into
-    getcwd(cwdBuffer, cwdBufferSize);
-    
-    // Print the current working directory's path to the console
-    printf("%s", cwdBuffer);
+    // Print current directory...
+    printCurrentDirToConsole();
     
     // And print a colon then a space so the user can easily see where they're entering their command...
     printf(": ");
@@ -353,4 +354,62 @@ void detectQuitCmd(char *cmd) {
     
 }
 
+// A function to check if the command passed in is a built-in and if so execute it as a built-in and return true so the calling code knows it's been executed, otherwise, return false so the calling code knows that it has not yet been executed
+bool executeBuiltIn(char *cmd, char *params[]) {
+    // Define builtins
+    const char *cdCommand = "cd";
+    const char *pwdCommand = "pwd";
+    
+    // Check to see if cmd matches built in commands
+    if (strcmp(cmd, cdCommand) == 0) {
+        // Perform 'cd' built-in!
+        builtinCd(params);
+        
+        return true;
+    }
+    
+    if (strcmp(cmd, pwdCommand) == 0) {
+        // Perform 'pwd' built-in!
+        builtinPwd();
+        
+        return true;
+    }
 
+    
+    // It's not a built-in function, return false to indicate as such
+    return false;
+}
+
+// A built-in 'cd' function, changes the current directory...
+void builtinCd(char *params[]) {
+    char *newDirectory = *params[0];
+    printf("new = %s", newDirectory);
+    // I looked up chdir at http://pubs.opengroup.org/onlinepubs/9699919799/functions/chdir.html
+    chdir(newDirectory);
+    
+}
+
+// A built-in 'pwd' function, prints the current working directory to the console...
+void builtinPwd() {
+    printCurrentDirToConsole();
+    
+    // And print a new-line
+    printf("\n");
+    
+}
+
+// A function that prints the current path to the console; intended to be used in the pwd built-in function, and in the prompt function. I wrote this function to minimise code duplication.
+void printCurrentDirToConsole() {
+    // I looked up the getcwd() function at http://pubs.opengroup.org/onlinepubs/9699919799/functions/getcwd.html
+    size_t cwdBufferSize = INPUT_BUFFER_SIZE;
+    
+    // Allocate a buffer of a reasnoble size to read the current working directory path string into
+    char *cwdBuffer = malloc(cwdBufferSize * sizeof(char));
+    
+    // Get the current working directory path into
+    getcwd(cwdBuffer, cwdBufferSize);
+    
+    // Print the current working directory's path to the console
+    printf("%s", cwdBuffer);
+    
+}
