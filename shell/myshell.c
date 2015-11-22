@@ -20,11 +20,16 @@ const char *QUIT_STRING = "q";
 // Declare the newline char. as a constant to improve code readability and make it easy to change for example if this code is used on a non-standard system with a different newline char to \n
 const char *NEW_LINE_CHAR = "\n";
 
+// Declare a command to use for help...
+const char *HELP_COMMAND = "help";
+
+// Declare a constant 'help' string to print to the console when the user uses the help command
+const char *HELP_STRING = "\nHELP\nThis is a simple shell. To use, enter your command and any parameters (separated by spaces) and hit return.\nEnter 'q' and hit return to exit the shell.\n\n";
+
 // Declare function prototypes
 void prompt();
 void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
-bool isNewLine(char *cmd);
 
 // I based the rough structure of the main() function, along with the initial function prototype names, off of the shell slide in the lecture notes.
 int main(int argc, const char *argv[] ) {
@@ -45,13 +50,23 @@ int main(int argc, const char *argv[] ) {
         
         // Check if the user entered anything at the prompt or just hit return?
         // See if the first char in the string is a newline - if so - they just hit return.
-        if (isNewLine(commandString)) {
+        if (strcmp(commandString, NEW_LINE_CHAR) == 0) {
             // The user just hit return; loop around, don't try to execve a newline char...
             continue;
         }
         
         // Now that we're certain they entered a command, remove the trailing \n from the command string (if one exists)...
         commandString = strtok(commandString, NEW_LINE_CHAR);
+        
+        // If the user asked for help, print the help text to the console, then continue on the while loop...
+        if (strcmp(commandString, HELP_COMMAND) == 0) {
+            // Print some pre-defined help
+            printf(HELP_STRING);
+            
+            // Loop around...
+            continue;
+        }
+        
         
         // Newline so we print output out on another line
         printf("\n");
@@ -74,7 +89,13 @@ int main(int argc, const char *argv[] ) {
             }
         } else {
             // This is the child process, execute the user's command with any parameters they've passed in...
-            execve(commandString, parametersArray, NULL);
+            int execStatus = execve(commandString, parametersArray, NULL);
+            
+            // In error scenarios, execve returns -1...
+            if (execStatus == -1) {
+                // An error occured...
+            }
+            
         }
         
         // Free the command string pointer; we've finished with it and need to clear it from the heap
@@ -227,15 +248,4 @@ void detectQuitCmd(char *cmd) {
     
 }
 
-// This function checks to see if the cmd string it has been passed is just a new line. It returns true if it is, false if not
-bool isNewLine(char *cmd) {
-    // If the string comparison returns an offset of 0, then the cmd string is equal to the newline char.
-    // (I didn't want to just return a boolean expression from this function as that wouldn't strictly by an stdbool boolean).
-    if (strcmp(cmd, NEW_LINE_CHAR) == 0) {
-        return true;
-    } else {
-        return false;
-    }
-    
-}
 
