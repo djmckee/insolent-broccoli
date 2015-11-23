@@ -110,11 +110,16 @@ int main(int argc, const char *argv[] ) {
             // This is the parent process, wait for the child process to complete, read status into status placeholder var...
             waitpid(-1, &status, 0);
             
-            // TODO: Check status, provide error info
+            // Check status, provide error info
             if (status != 0) {
-                // An error occured...
+                // An error occured... let the user know it was in the child process.
+                printf("\nAn error occured: the child process ended abruptly\n");
+                
+                // Print some error info...
+                perror("child process error");
                 
             }
+            
         } else {
             // This is the child process, execute the user's command with any parameters they've passed in...
 
@@ -155,7 +160,7 @@ int main(int argc, const char *argv[] ) {
                         
                         // While there's still tokens to be read in, read them!
                         while (token != NULL) {
-                            // it's another path, add it to the paths array and resize
+                            // It's another path, add it to the paths array and resize
                             // Increment the size counter so the array is resized to the correct new size...
                             arraySizeCount++;
                             
