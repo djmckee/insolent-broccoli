@@ -12,7 +12,7 @@
 // The maximum command input length in chars (for buffer size)...
 #define INPUT_BUFFER_SIZE 1024
 
-// The maximum parameter input lenght in chars
+// The maximum parameter input length in chars
 #define PARAMETER_INPUT_LENGTH_MAX 255
 
 // Define the string that quits the shell as a constant
@@ -398,9 +398,10 @@ void builtinCd(char *params[]) {
 
 // A built-in 'pwd' function, prints the current working directory to the console...
 void builtinPwd() {
+    // Print current working directory...
     printCurrentDirToConsole();
     
-    // And print a new-line
+    // And print a new-line to follow...
     printf("\n");
 
     
