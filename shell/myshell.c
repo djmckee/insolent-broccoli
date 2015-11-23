@@ -33,6 +33,7 @@ const char *HELP_STRING = "\nHELP\nThis is a simple shell. To use, enter your co
 // A gloabl placeholder for the custom command prompt...
 char *CustomCommandString;
 
+
 // Declare function prototypes
 void prompt();
 void readCmd(char *cmd, char **params[]);
