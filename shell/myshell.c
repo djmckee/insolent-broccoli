@@ -24,8 +24,14 @@ const char *NEW_LINE_CHAR = "\n";
 // Define a command to use for help...
 const char *HELP_COMMAND = "help";
 
+// Define a command to use to change the command prompt string...
+const char *CHANGE_PROMPT_COMMAND = "change";
+
 // Define a constant 'help' string to print to the console when the user uses the help command
 const char *HELP_STRING = "\nHELP\nThis is a simple shell. To use, enter your command and any parameters (separated by spaces) and hit return.\nEnter 'q' and hit return to exit the shell.\n\n";
+
+// A gloabl placeholder for the custom command prompt...
+char *CustomCommandString;
 
 // Declare function prototypes
 void prompt();
@@ -33,6 +39,7 @@ void readCmd(char *cmd, char **params[]);
 void detectQuitCmd(char *cmd);
 bool executeBuiltIn(char *cmd, char *params[]);
 void printCurrentDirToConsole();
+void changeCmdPrompt();
 
 // Declare built-in function prototypes
 void builtinCd(char *params[]);
@@ -69,6 +76,15 @@ int main(int argc, const char *argv[] ) {
         if (strcmp(commandString, HELP_COMMAND) == 0) {
             // Print some pre-defined help
             printf("%s", HELP_STRING);
+            
+            // Loop around...
+            continue;
+        }
+        
+        // If the user asked to change command prompt string, change it, then continue on the while loop...
+        if (strcmp(commandString, CHANGE_PROMPT_COMMAND) == 0) {
+            // Allow them to change string...
+            changeCmdPrompt();
             
             // Loop around...
             continue;
@@ -232,8 +248,15 @@ int main(int argc, const char *argv[] ) {
 
 // A function to print the shell's command prompt to the console...
 void prompt() {
-    // Print current directory...
-    printCurrentDirToConsole();
+    // If there's a custom prompt set, print that - otherwise, default to the current working directory...
+    if (CustomCommandString != NULL) {
+        printf("%s", CustomCommandString);
+    } else {
+        // No custom prompt set; fallback to default working directory prompt
+        // Print current directory...
+        printCurrentDirToConsole();
+    
+    }
     
     // And print a colon then a space so the user can easily see where they're entering their command...
     printf(": ");
@@ -312,7 +335,6 @@ void readCmd(char *cmd, char **params[]) {
             
             params[newIndex] = &mutableParameter;
             
-            
         }
         
         // And read the next token...
@@ -332,8 +354,10 @@ void readCmd(char *cmd, char **params[]) {
         
     }
     
-    // Terminate the parameters array with a NULL
-    params[arraySizeCount] = NULL;
+    // Terminate the parameters array with a NULL (if array exists)
+    if (params != NULL) {
+        params[arraySizeCount] = NULL;
+    }
     
     
     // Copy the value of the input command string we read into the cmd pointer we've been passed (do not assign directly because inputCommand's a local pointer)
@@ -404,6 +428,32 @@ void builtinPwd() {
     // And print a new-line to follow...
     printf("\n");
 
+    
+}
+
+// A function to change the command prompt string to something custom
+void changeCmdPrompt() {
+    // Print some instructions...
+    printf("\nEnter a new command prompt string, then press enter: ");
+    
+    // If there's an existing custom command prompt string in place, get rid of it...
+    if (CustomCommandString != NULL) {
+        free(CustomCommandString);
+    }
+    
+    // Allocate a placeholder for the new string...
+    CustomCommandString = malloc(INPUT_BUFFER_SIZE);
+    
+    // Read the user's input...
+    readCmd(CustomCommandString, NULL);
+    
+    // Remove newline char...
+    CustomCommandString = strtok(CustomCommandString, NEW_LINE_CHAR);
+
+
+    // Print some feedback...
+    printf("Setting command prompt to '%s'\n", CustomCommandString);
+    
     
 }
 
